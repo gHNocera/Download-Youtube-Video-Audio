@@ -1,0 +1,10 @@
+-------------------------------------------------------------------------------
+Test set: com.ghartmann.AppTest
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.286 s <<< FAILURE! - in com.ghartmann.AppTest
+shouldCreateTela(com.ghartmann.AppTest)  Time elapsed: 0.249 s  <<< ERROR!
+java.lang.reflect.InvocationTargetException
+	at com.ghartmann.AppTest.setUp(AppTest.java:17)
+Caused by: java.lang.NullPointerException: Cannot invoke "String.split(String)" because "link" is null
+	at com.ghartmann.AppTest.lambda$0(AppTest.java:17)
+
