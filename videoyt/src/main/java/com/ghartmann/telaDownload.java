@@ -12,7 +12,6 @@ import java.awt.event.FocusListener;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.regex.Matcher;
@@ -23,7 +22,6 @@ import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.SwingConstants;
-import javax.swing.SwingWorker;
 
 import net.coobird.thumbnailator.Thumbnails;
 
@@ -83,7 +81,9 @@ public class telaDownload extends javax.swing.JFrame {
         });
         jLink.addActionListener(this::jLinkActionPerformed);
 
-        jFormato.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "mp4", "mp3"}));
+        jFormato.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "ᴠɪ́ᴅᴇᴏ ᴄᴏᴍ ᴀ́ᴜᴅɪᴏ", "(MP4 - 1080p60)", "(MP4 - 720p60)", 
+                                                                                "(MP4 - 480p)", "(MP4 - 360p)", "(MP4 - 240p)", "(MP4 - 144p)",
+                                                                                "ᴀ́ᴜᴅɪᴏ", "(MP3 - 320kbps)", "(MP3 - 256kbps)", "(MP3 - 128kbps)"}));
         jFormato.addActionListener(this::jFormatoActionPerformed);
 
         jDownload.setText("Download");
@@ -228,52 +228,56 @@ public class telaDownload extends javax.swing.JFrame {
         });
     }
 
-    // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jDiretório;
     private javax.swing.JButton jDownload;
     private javax.swing.JComboBox<String> jFormato;
     private javax.swing.JLabel jInfo;
     private javax.swing.JTextField jLink;
     private javax.swing.JLabel jThumb;
-    // End of variables declaration//GEN-END:variables
+
 
     private void downloadVideo(String linkVideo, String downloadPath) {
-        // Cria um SwingWorker para executar o download em segundo plano
-        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
-            @Override
-            protected Void doInBackground() throws Exception {
-                String command;
-                try {
-                    if (videos.getFormato().equals("mp3")) {
-                        // Comando para baixar apenas o áudio em MP3
-                        command = "yt-dlp -x --audio-format mp3 -o \"" + downloadPath + "/%(title)s.%(ext)s\" " + linkVideo;
-                    } else {
-                        // Comando para baixar o vídeo no melhor formato MP4 disponível
-                        command = "yt-dlp -f \"bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]\" -o \"" + downloadPath + "/%(title)s.%(ext)s\" " + linkVideo;
-                    }
+        String[] command;
+        switch (videos.getFormato()) {
+            case "(MP4 - 1080p60)":
+                command = new String[]{"yt-dlp", "-S", "res:1920x1080,fps", "-P", downloadPath, linkVideo};
+                break;
+            case "(MP4 - 720p60)":
+                command = new String[]{"yt-dlp", "-S", "res:1280:720,fps", "-P", downloadPath, linkVideo};
+                break;
+            case "(MP4 - 480p)":
+                command = new String[]{"yt-dlp", "-S", "res:824:480,fps", "-P", downloadPath, linkVideo};
+                break;
+            case "(MP4 - 360p)":
+                command = new String[]{"yt-dlp", "-S", "res:640:360,fps", "-P", downloadPath, linkVideo};
+                break;
+            case "(MP4 - 240p)":
+                command = new String[]{"yt-dlp", "-S", "res:426:240,fps", "-P", downloadPath, linkVideo};
+                break;
+            default:
+                command = new String[]{"yt-dlp", "-S", "res:256:144,fps", "-P", downloadPath, linkVideo};
+                break;
+        }
+    
+        try {
+            ProcessBuilder pb = new ProcessBuilder(command);
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+    
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            Pattern progressPattern = Pattern.compile("\\b(\\d{1,3}\\.\\d)%");
 
-                    // Executa o comando
-                    Process process = Runtime.getRuntime().exec(command);
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                    int exitCode = process.waitFor();
-
-                    // Verifica se o download foi bem-sucedido
-                    if (exitCode == 0) {
-                        JOptionPane.showMessageDialog(telaDownload.this, "Download Completo!");
-                    } else {
-                        JOptionPane.showMessageDialog(telaDownload.this, "Erro ao baixar o vídeo.");
-                    }
-                } catch (IOException | InterruptedException e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(telaDownload.this, "Erro ao executar o comando.");
-                }
-                return null;
+            while ((line = reader.readLine()) != null) {
+                Matcher matcher = progressPattern.matcher(line);
             }
-        };
-
-        // Executa o SwingWorker
-        worker.execute();
+            int exitCode = process.waitFor();
+            System.out.println("Process finished with code: " + exitCode);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
+    
 
     private static String extrairVideoId(String link) {
         if (link == null || link.isEmpty()) {
