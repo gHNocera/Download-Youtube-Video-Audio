@@ -14,6 +14,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -21,7 +22,9 @@ import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JProgressBar;
 import javax.swing.SwingConstants;
+import javax.swing.SwingWorker;
 
 import net.coobird.thumbnailator.Thumbnails;
 
@@ -33,7 +36,6 @@ public class telaDownload extends javax.swing.JFrame {
 
     Video videos = new Video();
 
-    private static final String API_KEY = "AIzaSyA_nf5sD833P4sNQw8Q72Mvvj-is_2zUkw";
 
     /**
      * Creates new form telaDownload
@@ -56,6 +58,7 @@ public class telaDownload extends javax.swing.JFrame {
         jDiretório = new javax.swing.JButton();
         jInfo = new javax.swing.JLabel();
         jThumb = new javax.swing.JLabel();
+        jProgressBar = new JProgressBar(0, 100);
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setBackground(new java.awt.Color(153, 153, 153));
@@ -95,6 +98,13 @@ public class telaDownload extends javax.swing.JFrame {
         jInfo.setText("");
 
         jThumb.setText("");
+        
+        jProgressBar.setStringPainted(true);        
+        jProgressBar.setMinimum(0);
+        jProgressBar.setMaximum(100);
+        jProgressBar.setValue(0);
+        jProgressBar.setVisible(true);
+        
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -117,6 +127,14 @@ public class telaDownload extends javax.swing.JFrame {
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         .addComponent(jInfo, javax.swing.GroupLayout.PREFERRED_SIZE, 400, javax.swing.GroupLayout.PREFERRED_SIZE)
         .addGap(58, 58, 58))
+        .addGroup(layout.createSequentialGroup()
+        .addGap(21, 21, 21)
+        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jLink, javax.swing.GroupLayout.PREFERRED_SIZE, 604, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addGroup(layout.createSequentialGroup()
+                .addGap(85, 85, 85)
+                .addComponent(jDownload, javax.swing.GroupLayout.PREFERRED_SIZE, 280, javax.swing.GroupLayout.PREFERRED_SIZE))
+            .addComponent(jProgressBar, javax.swing.GroupLayout.PREFERRED_SIZE, 64, javax.swing.GroupLayout.PREFERRED_SIZE)))
 );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -134,6 +152,11 @@ public class telaDownload extends javax.swing.JFrame {
                     .addComponent(jDiretório, javax.swing.GroupLayout.PREFERRED_SIZE, 72, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jDownload, javax.swing.GroupLayout.PREFERRED_SIZE, 76, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(74, 74, 74))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addComponent(jDownload, javax.swing.GroupLayout.PREFERRED_SIZE, 76, javax.swing.GroupLayout.PREFERRED_SIZE))
+            .addGap(18, 18, 18)
+    .addComponent(jProgressBar, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
+    .addGap(74, 74, 74)
         );
 
         pack();
@@ -162,6 +185,7 @@ public class telaDownload extends javax.swing.JFrame {
 
     private void jDownloadActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jDownloadActionPerformed
        String linkVideo = videos.getLink().trim();
+       jProgressBar.setVisible(false);
        if(!linkVideo.isEmpty()){
             String downloadPath = videos.getDiretorio();
             downloadVideo(linkVideo, downloadPath);
@@ -207,7 +231,6 @@ public class telaDownload extends javax.swing.JFrame {
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
          * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
          */
-
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
@@ -234,72 +257,78 @@ public class telaDownload extends javax.swing.JFrame {
     private javax.swing.JLabel jInfo;
     private javax.swing.JTextField jLink;
     private javax.swing.JLabel jThumb;
+    private javax.swing.JProgressBar jProgressBar;
 
 
     private void downloadVideo(String linkVideo, String downloadPath) {
-        String[] command;
-        switch (videos.getFormato()) {
-            case "(MP4 - 1080p60)":
-                command = new String[]{"yt-dlp", "-S", "res:1920x1080,fps", "-P", downloadPath, linkVideo};
-                break;
-            case "(MP4 - 720p60)":
-                command = new String[]{"yt-dlp", "-S", "res:1280:720,fps", "-P", downloadPath, linkVideo};
-                break;
-            case "(MP4 - 480p)":
-                command = new String[]{"yt-dlp", "-S", "res:824:480,fps", "-P", downloadPath, linkVideo};
-                break;
-            case "(MP4 - 360p)":
-                command = new String[]{"yt-dlp", "-S", "res:640:360,fps", "-P", downloadPath, linkVideo};
-                break;
-            case "(MP4 - 240p)":
-                command = new String[]{"yt-dlp", "-S", "res:426:240,fps", "-P", downloadPath, linkVideo};
-                break;
-            default:
-                command = new String[]{"yt-dlp", "-S", "res:256:144,fps", "-P", downloadPath, linkVideo};
-                break;
-        }
-    
-        try {
-            ProcessBuilder pb = new ProcessBuilder(command);
-            pb.redirectErrorStream(true);
-            Process process = pb.start();
-    
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line;
-            Pattern progressPattern = Pattern.compile("\\b(\\d{1,3}\\.\\d)%");
+        SwingWorker<Void, Integer> worker = new SwingWorker<Void,Integer>() {
 
-            while ((line = reader.readLine()) != null) {
-                Matcher matcher = progressPattern.matcher(line);
+            @Override
+            protected Void doInBackground() throws Exception {
+                String[] command;
+            switch (videos.getFormato()) {
+                case "(MP4 - 1080p60)":
+                    command = new String[]{"yt-dlp", "-S", "res:1920x1080,fps", "-P", downloadPath, linkVideo};
+                    break;
+                case "(MP4 - 720p60)":
+                    command = new String[]{"yt-dlp", "-S", "res:1280:720,fps", "-P", downloadPath, linkVideo};
+                    break;
+                case "(MP4 - 480p)":
+                    command = new String[]{"yt-dlp", "-S", "res:824:480,fps", "-P", downloadPath, linkVideo};
+                    break;
+                case "(MP4 - 360p)":
+                    command = new String[]{"yt-dlp", "-S", "res:640:360,fps", "-P", downloadPath, linkVideo};
+                    break;
+                case "(MP4 - 240p)":
+                    command = new String[]{"yt-dlp", "-S", "res:426:240,fps", "-P", downloadPath, linkVideo};
+                    break;
+                default:
+                    command = new String[]{"yt-dlp", "-S", "res:256:144,fps", "-P", downloadPath, linkVideo};
+                    break;
             }
-            int exitCode = process.waitFor();
-            System.out.println("Process finished with code: " + exitCode);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+            try {
+                ProcessBuilder pb = new ProcessBuilder(command);
+                pb.redirectErrorStream(true);
+                Process process = pb.start();
+        
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                String line;
+                Pattern progressPattern = Pattern.compile("\\b(\\d{1,3}\\.\\d)%");
+    
+                while ((line = reader.readLine()) != null) {
+                    Matcher matcher = progressPattern.matcher(line);
+                    if(matcher.find()){
+                        double percent = Double.parseDouble(matcher.group(1));
+                        publish((int) percent);
+                    }
+                }
+                int exitCode = process.waitFor();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+            }
+
+             @Override
+            protected void process(List<Integer> chunks) {
+                int lastValue = chunks.get(chunks.size() - 1);
+                jProgressBar.setValue(lastValue);
+            }
+            @Override
+            protected void done() {
+                jProgressBar.setValue(100);
+                JOptionPane.showMessageDialog(null, "Download concluído!");
+                jProgressBar.setVisible(false);
+            } 
+        };
+        worker.execute();
     }
     
 
-    private static String extrairVideoId(String link) {
-        if (link == null || link.isEmpty()) {
-            return null; // Retorna null se o link for nulo ou vazio
-        }
-    
-        // Verifica se o link contém "v="
-        int indexOfV = link.indexOf("v=");
-        if (indexOfV == -1) {
-            return null; // Retorna null se "v=" não for encontrado
-        }
-    
-        // Extrai a parte da URL após "v="
-        String videoId = link.substring(indexOfV + 2); // +2 para pular "v="
-    
-        // Remove qualquer parâmetro adicional após o ID do vídeo
-        int indexOfAmpersand = videoId.indexOf('&');
-        if (indexOfAmpersand != -1) {
-            videoId = videoId.substring(0, indexOfAmpersand);
-        }
-    
-        return videoId;
+    private static String extrairVideoId(String url) {
+        Pattern pattern = Pattern.compile("(?<=v=|be/|embed/)[^&?\\s]{11}");
+        Matcher matcher = pattern.matcher(url);
+        return matcher.find() ? matcher.group() : null;
     }
 
     
@@ -312,27 +341,13 @@ public class telaDownload extends javax.swing.JFrame {
 
     private String getVideoTitulo(String videoLink) {
         try {
-            URL url = new URL(videoLink);
-            BufferedReader leitor = new BufferedReader(new InputStreamReader(url.openStream()));
-            StringBuilder conteudoPagina = new StringBuilder();
-            String linha;
-            while((linha = leitor.readLine()) != null){
-                conteudoPagina.append(linha);
-
-            }
-            leitor.close();
-
-            String html = conteudoPagina.toString();
-            Pattern pattern = Pattern.compile("<meta name=\\\"title\\\" content=\\\"(.*?)\\\">");
-            Matcher matcher = pattern.matcher(html);
-            
-            if(matcher.find()){
-                String temp = matcher.group();
-                return temp.split("content=")[1].replaceAll("&quot;", "").replaceAll(">", "");
-            }else{
-                return null;
-            }
-            
+            ProcessBuilder pb = new ProcessBuilder("yt-dlp", "--get-title", videoLink);
+            Process process = pb.start();
+    
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String titulo = reader.readLine(); // lê apenas a primeira linha (o título)
+            process.waitFor();
+            return titulo;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
