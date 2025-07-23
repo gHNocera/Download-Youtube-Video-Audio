@@ -1,5 +1,7 @@
 package com.ghartmann;
 
+import static org.junit.Assert.assertNotNull;
+
 import javax.swing.SwingUtilities;
 
 import org.junit.Before;
@@ -20,9 +22,7 @@ public class AppTest {
 
     @Test
     public void shouldCreateTela() {
-        while (true) { 
-            tela.setVisible(true);
-        }
+        assertNotNull(tela);
     }
 }
 
